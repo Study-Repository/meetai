@@ -98,7 +98,7 @@ export const SignInView = () => {
                 <div className="flex flex-col items-center text-center">
                   <h1 className="text-2xl font-bold">Welcome back</h1>
                   <p className="text-muted-foreground text-balance">
-                    Login to your account
+                    Sign in to your account
                   </p>
                 </div>
                 <div className="grid gap-3">
@@ -185,7 +185,7 @@ export const SignInView = () => {
               </div>
             </form>
           </Form>
-          <div className="relative hidden flex-col items-center justify-center gap-y-4 bg-radial from-green-700 to-green-900 md:flex">
+          <div className="from-sidebar-accent to-sidebar relative hidden flex-col items-center justify-center gap-y-4 bg-radial md:flex">
             <Image
               src="/logo.svg"
               alt="logo"

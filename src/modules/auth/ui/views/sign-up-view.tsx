@@ -231,13 +231,13 @@ export const SignUpView = () => {
               </div>
             </form>
           </Form>
-          <div className="relative hidden flex-col items-center justify-center gap-y-4 bg-radial from-green-700 to-green-900 md:flex">
+          <div className="from-sidebar-accent to-sidebar relative hidden flex-col items-center justify-center gap-y-4 bg-radial md:flex">
             <Image
               src="/logo.svg"
               alt="logo"
               loading="eager"
               className="h-[92px] w-[92px]"
-              width={92}
+              width={92} // TODO: Make this dynamic
               height={92}
             />
             <p className="text-2xl font-semibold text-white">Meet.AI</p>
