@@ -1,6 +1,9 @@
-import { Geist, Geist_Mono, Inter } from 'next/font/google';
+import { Inter } from 'next/font/google';
+
+import { TRPCReactProvider } from '@/trpc/client';
 
 import type { Metadata } from 'next';
+
 import './globals.css';
 
 const inter = Inter({
@@ -33,7 +36,7 @@ export default function RootLayout({
         // className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         className={`${inter.className} antialiased`}
       >
-        {children}
+        <TRPCReactProvider>{children}</TRPCReactProvider>
       </body>
     </html>
   );

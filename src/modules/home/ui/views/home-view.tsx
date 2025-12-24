@@ -1,30 +1,27 @@
 'use client';
 
+import { useQuery } from '@tanstack/react-query';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
 
-import { Button } from '@/components/ui/button';
 import { authClient } from '@/lib/auth-client';
+import { useTRPC } from '@/trpc/client';
 
 export const HomeView = () => {
-  const { data: session, isPending } = authClient.useSession();
-  const router = useRouter();
+  const { data: session } = authClient.useSession();
 
-  const handleSignOut = () => {
-    authClient.signOut({
-      fetchOptions: {
-        onSuccess: () => {
-          router.replace('/sign-in');
-        },
-      },
-    });
-  };
+  const trpc = useTRPC();
+  const greeting = useQuery({
+    ...trpc.hello.queryOptions({
+      text: session?.user.name ?? 'world',
+    }),
+    enabled: !!session,
+  });
 
-  return !session ? (
+  return !greeting.data ? (
     <div className="text-center text-2xl font-bold">Loading...</div>
   ) : (
-    <div className="flex w-full flex-row items-baseline justify-between">
-      <div className="flex flex-row items-baseline gap-x-4">
+    <div className="flex w-full flex-col items-baseline justify-between">
+      <div className="flex flex-col items-baseline gap-y-4">
         <Image
           className="dark:invert"
           src="/next.svg"
@@ -33,13 +30,8 @@ export const HomeView = () => {
           height={20}
           priority
         />
-        <p>
-          Hello, <span className="font-bold">{session.user.name}</span>
-        </p>
+        <p>{greeting.data.greeting}</p>
       </div>
-      <Button onClick={handleSignOut} disabled={isPending}>
-        Sign out
-      </Button>
     </div>
   );
 };
