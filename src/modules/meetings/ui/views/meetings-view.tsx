@@ -10,26 +10,23 @@ import { ErrorState } from '@/components/error-state';
 import { LoadingState } from '@/components/loading-state';
 import { useTRPC } from '@/trpc/client';
 
-import { useAgentsFilters } from '../../hooks/use-agents-filters';
+import { useMeetingsFilters } from '../../hooks/use-meetings-filters';
 import { columns } from '../components/columns';
 
-/**
- * Agents View
- */
-export const AgentsView = () => {
-  const [filters, setFilters] = useAgentsFilters();
+export const MeetingsView = () => {
+  const [filters, setFilters] = useMeetingsFilters();
   const router = useRouter();
   const trpc = useTRPC();
   const {
     data: { items, totalPages },
-  } = useSuspenseQuery(trpc.agents.getMany.queryOptions(filters));
+  } = useSuspenseQuery(trpc.meetings.getMany.queryOptions(filters));
 
   return (
     <div className="flex flex-1 flex-col gap-y-4 px-4 pb-4 md:px-8">
       <DataTable
         columns={columns}
         data={items}
-        onRowClick={(row) => router.push(`/agents/${row.id}`)}
+        onRowClick={(row) => router.push(`/meetings/${row.id}`)}
       />
       <DataPagination
         page={filters.page}
@@ -38,8 +35,8 @@ export const AgentsView = () => {
       />
       {items.length === 0 && filters.search === '' && (
         <EmptyState
-          title="Create your first agent"
-          description="Create an agent to join your meetings. Each agent will follow your instructions and can interact with participants during the call."
+          title="Create your first meeting"
+          description="Schedule a meeting to connect with others. Each meeting lets you collaborate, share ideas, and interact with participants in real time."
         />
       )}
     </div>
@@ -47,24 +44,24 @@ export const AgentsView = () => {
 };
 
 /**
- * Agents View - Loading State
+ * Meetings View - Loading State
  */
-export const AgentsViewLoading = () => {
+export const MeetingsViewLoading = () => {
   return (
     <LoadingState
-      title="Loading Agents"
+      title="Loading Meetings"
       description="This may take a few seconds"
     />
   );
 };
 
 /**
- * Agents View - Error State
+ * Meetings View - Error State
  */
-export const AgentsViewError = () => {
+export const MeetingsViewError = () => {
   return (
     <ErrorState
-      title="Error Loading Agents"
+      title="Error Loading Meetings"
       description="Please try again later"
     />
   );

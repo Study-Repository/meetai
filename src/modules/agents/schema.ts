@@ -20,12 +20,16 @@ export const agentsUpdateSchema = agentsInsertSchema.extend(
   agentsIdSchema.shape,
 );
 
+export const agentsSearchSchema = z.object({
+  search: z.string().nullish(),
+});
+
 export const agentsPaginationSchema = z.object({
+  ...agentsSearchSchema.shape,
   page: z.number().default(DEFAULT_PAGE),
   pageSize: z
     .number()
     .min(MIN_PAGE_SIZE)
     .max(MAX_PAGE_SIZE)
     .default(DEFAULT_PAGE_SIZE),
-  search: z.string().nullish(),
 });

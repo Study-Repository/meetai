@@ -14,9 +14,9 @@ import { ErrorState } from '@/components/error-state';
 import { GeneratedAvatar } from '@/components/generated-avatar';
 import { LoadingState } from '@/components/loading-state';
 import { Badge } from '@/components/ui/badge';
+import { useConfirm } from '@/hooks/use-confirm';
 import { useTRPC } from '@/trpc/client';
 
-import { useConfirm } from '../../hooks/use-confirm';
 import { AgentIdViewHeader } from '../components/agent-id-view-header';
 import { UpdateAgentDialog } from '../components/update-agent-dialog';
 

@@ -10,10 +10,36 @@ import {
   agentsIdSchema,
   agentsInsertSchema,
   agentsPaginationSchema,
+  agentsSearchSchema,
   agentsUpdateSchema,
 } from '../schema';
 
+const getAgentsWhereCondition = (userId: string, search?: string | null) => {
+  return and(
+    eq(agents.userId, userId),
+    search ? ilike(agents.name, `%${search}%`) : undefined,
+  );
+};
+
 export const agentsRouter = createTRPCRouter({
+  getAll: protectedProcedure
+    .input(agentsSearchSchema.optional())
+    .query(async ({ ctx, input = agentsSearchSchema.parse({}) }) => {
+      const { search } = input;
+
+      const data = await db
+        .select({
+          ...getTableColumns(agents),
+        })
+        .from(agents)
+        .where(getAgentsWhereCondition(ctx.auth.user.id, search))
+        .orderBy(desc(agents.createdAt), desc(agents.id))
+        .limit(100); // TODO: 加上硬限制，防止下拉框炸掉
+
+      return {
+        items: data,
+      };
+    }),
   getOne: protectedProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
@@ -38,15 +64,13 @@ export const agentsRouter = createTRPCRouter({
     .query(async ({ ctx, input = agentsPaginationSchema.parse({}) }) => {
       const { page, pageSize, search } = input;
 
-      const whereConditions = and(
-        eq(agents.userId, ctx.auth.user.id),
-        search ? ilike(agents.name, `%${search}%`) : undefined,
-      );
+      const whereConditions = getAgentsWhereCondition(ctx.auth.user.id, search);
+
       const [data, [totalCountResult]] = await Promise.all([
         db
           .select({
             ...getTableColumns(agents),
-            meetingCount: sql<number>`5`,
+            meetingCount: sql<number>`5`, // TODO: change to actual count
           })
           .from(agents)
           .where(whereConditions)

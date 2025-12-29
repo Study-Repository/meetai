@@ -21,10 +21,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { useTRPC } from '@/trpc/client';
 
 import { agentsInsertSchema } from '../../schema';
-import { AgentGetOne } from '../../types';
+import { AgentsGetOne } from '../../types';
 
 interface Props {
-  initialValues?: AgentGetOne;
+  initialValues?: AgentsGetOne;
   onSuccess?: () => void;
   onCancel?: () => void;
 }
@@ -36,7 +36,11 @@ export const AgentForm = ({ initialValues, onSuccess, onCancel }: Props) => {
   const createAgent = useMutation(
     trpc.agents.create.mutationOptions({
       onSuccess: async () => {
-        await queryClient.invalidateQueries(trpc.agents.getMany.queryOptions());
+        // NOTE: invalidate queries to update the list and the select options
+        await Promise.all([
+          queryClient.invalidateQueries(trpc.agents.getMany.queryOptions()),
+          queryClient.invalidateQueries(trpc.agents.getAll.queryOptions()),
+        ]);
         onSuccess?.();
       },
       onError: (error) => {
@@ -104,7 +108,7 @@ export const AgentForm = ({ initialValues, onSuccess, onCancel }: Props) => {
             <FormItem>
               <FormLabel>Name</FormLabel>
               <FormControl>
-                <Input {...field} placeholder='e.g. "Neo"' />
+                <Input {...field} placeholder='e.g. "Math Tutor"' />
               </FormControl>
               <FormMessage />
             </FormItem>
