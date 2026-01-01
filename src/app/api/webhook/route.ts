@@ -10,6 +10,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { db } from '@/db';
 import { agents, meetings } from '@/db/schema';
+import { inngest } from '@/inngest/client';
 import { streamVideo } from '@/lib/stream-video';
 import { MeetingStatus } from '@/modules/meetings/types';
 
@@ -222,6 +223,18 @@ export async function POST(req: NextRequest) {
           { status: 404 },
         );
       }
+
+      // trigger inngest function to process the meeting
+      await inngest.send({
+        // The event name
+        name: 'meetings/processing',
+        // The event's data
+        data: {
+          meetingId: updatedMeeting.id,
+          agentId: updatedMeeting.agentId,
+          transcriptUrl: updatedMeeting.transcriptUrl,
+        },
+      });
 
       console.log('>>> Meeting updated with transcription', updatedMeeting.id);
 

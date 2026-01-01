@@ -1,0 +1,19 @@
+services:
+  inngest:
+    image: inngest/inngest:latest
+    container_name: meetai-inngest
+    command: 'inngest dev -u http://${HOST_IP:-host.docker.internal}:3000/api/inngest'
+    ports:
+      - '8288:8288'
+    environment:
+      - HTTP_PROXY=http://host.docker.internal:7890
+      - HTTPS_PROXY=http://host.docker.internal:7890
+      - http_proxy=http://host.docker.internal:7890
+      - https_proxy=http://host.docker.internal:7890
+      # 必须配置 NO_PROXY 避免代理本地流量
+      - NO_PROXY=localhost,127.0.0.1,0.0.0.0,meetai-inngest
+      - no_proxy=localhost,127.0.0.1,0.0.0.0,meetai-inngest
+    # Add extra_hosts to resolve host.docker.internal on Linux/older Docker versions (optional but recommended)
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+    restart: unless-stopped

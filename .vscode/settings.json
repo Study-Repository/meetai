@@ -5,7 +5,7 @@
   "editor.codeActionsOnSave": {
     "source.fixAll.eslint": "explicit"
   },
-  "cSpell.words": ["meetai", "commitlint", "nuqs"],
+  "cSpell.words": ["meetai", "commitlint", "nuqs", "inngest"],
   "explorer.fileNesting.enabled": true,
   "typescript.tsdk": "node_modules/typescript/lib",
   "typescript.enablePromptUseWorkspaceTsdk": true
