@@ -4,6 +4,12 @@ const nextConfig: NextConfig = {
   /* config options here */
 
   /**
+   * Allow specific origins to access the development server.
+   * This is useful when using tools like ngrok.
+   */
+  allowedDevOrigins: ['corey-preestival-synthia.ngrok-free.dev'],
+
+  /**
    * NOTE: reactStrictMode
    *
    * can cause hydration errors in Next.js 16.
