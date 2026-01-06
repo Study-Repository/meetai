@@ -4,6 +4,7 @@ import JSONL from 'jsonl-parse-stringify';
 
 import { db } from '@/db';
 import { meetings } from '@/db/schema';
+import { getMeetingParticipants } from '@/modules/meetings/server/queries';
 import { MeetingStatus, StreamTranscriptItem } from '@/modules/meetings/types';
 
 import { inngest } from './client';
@@ -48,10 +49,25 @@ export const meetingsProcessing = inngest.createFunction(
 
     const response = await step.fetch(transcriptUrl).then((res) => res.text());
 
+    const participants = await step.run('fetch-participants', async () => {
+      const meetingData = await getMeetingParticipants(meetingId);
+
+      return {
+        userId: meetingData.userId ?? '',
+        dataMap: meetingData
+          ? {
+              [meetingData.userId]: meetingData.userName,
+              [agentId]: meetingData.agentName,
+            }
+          : {},
+      };
+    });
+
     const transcript = await step.run('parse-transcript', async () => {
       return JSONL.parse<StreamTranscriptItem>(response).map((item) => ({
         ...item,
-        is_user: item.speaker_id !== agentId,
+        is_user: participants.userId && participants.userId === item.speaker_id,
+        speaker_name: participants.dataMap[item.speaker_id] || 'Unknown',
       }));
     });
 

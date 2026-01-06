@@ -19,7 +19,9 @@ export enum MeetingStatus {
 }
 
 export type StreamTranscriptItem = {
+  is_user: boolean;
   speaker_id: string;
+  speaker_name: string;
   type: string;
   text: string;
   start_ts: number;

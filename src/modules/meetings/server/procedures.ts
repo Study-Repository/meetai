@@ -1,10 +1,12 @@
 import { TRPCError } from '@trpc/server';
 import { and, desc, eq, getTableColumns, ilike, sql } from 'drizzle-orm';
+import JSONL from 'jsonl-parse-stringify';
 import { z } from 'zod';
 
 import { db } from '@/db';
-import { agents, meetings } from '@/db/schema';
+import { agents, meetings, user } from '@/db/schema';
 import { generateAvatarUri } from '@/lib/avatar';
+import { streamChat } from '@/lib/stream-chat';
 import { streamVideo } from '@/lib/stream-video';
 import { createTRPCRouter, protectedProcedure } from '@/trpc/init';
 
@@ -14,9 +16,12 @@ import {
   meetingsPaginationSchema,
   meetingsUpdateSchema,
 } from '../schema';
+import { StreamTranscriptItem } from '../types';
+
+import { getMeetingParticipants } from './queries';
 
 export const meetingsRouter = createTRPCRouter({
-  generateToken: protectedProcedure.mutation(async ({ ctx }) => {
+  generateVideoToken: protectedProcedure.mutation(async ({ ctx }) => {
     await streamVideo.upsertUsers([
       {
         id: ctx.auth.user.id,
@@ -38,12 +43,24 @@ export const meetingsRouter = createTRPCRouter({
 
     return token;
   }),
+  generateChatToken: protectedProcedure.mutation(async ({ ctx }) => {
+    const token = streamChat.createToken(ctx.auth.user.id);
+    await streamChat.upsertUsers([
+      {
+        id: ctx.auth.user.id,
+        role: 'admin',
+        name: ctx.auth.user.name,
+      },
+    ]);
+    return token;
+  }),
   getOne: protectedProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
       const [existingMeeting] = await db
         .select({
           ...getTableColumns(meetings),
+          agent: agents,
           duration: sql<number>`EXTRACT(EPOCH FROM (ended_at - started_at))`.as(
             'duration',
           ),
@@ -118,6 +135,7 @@ export const meetingsRouter = createTRPCRouter({
       // Create Stream Call, Upsert Stream Users
       const call = await streamVideo.video.call('default', createdMeeting.id);
       await call.create({
+        members_limit: 2,
         data: {
           created_by_id: ctx.auth.user.id,
           custom: {
@@ -129,6 +147,10 @@ export const meetingsRouter = createTRPCRouter({
               language: 'en',
               mode: 'auto-on',
               closed_caption_mode: 'auto-on',
+              translation: {
+                enabled: true,
+                languages: ['en', 'zh'],
+              },
             },
             recording: {
               mode: 'auto-on',
@@ -201,6 +223,48 @@ export const meetingsRouter = createTRPCRouter({
       }
 
       return removedMeeting;
+    }),
+  getTranscript: protectedProcedure
+    .input(meetingsIdSchema)
+    .query(async ({ input }) => {
+      const [meeting] = await db
+        .select()
+        .from(meetings)
+        .where(eq(meetings.id, input.id));
+
+      if (!meeting.transcriptUrl) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Transcript URL not found',
+        });
+      }
+
+      const [participants, transcript] = await Promise.all([
+        getMeetingParticipants(input.id).then((data) => ({
+          userId: data.userId ?? '',
+          dataMap: data
+            ? {
+                [data.userId]: data.userName,
+                [meeting.agentId]: data.agentName,
+              }
+            : {},
+        })),
+
+        fetch(meeting.transcriptUrl).then((res) => res.text()),
+      ]);
+
+      if (!participants) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Participants not found',
+        });
+      }
+
+      return JSONL.parse<StreamTranscriptItem>(transcript).map((item) => ({
+        ...item,
+        is_user: participants.userId === item.speaker_id,
+        speaker_name: participants.dataMap[item.speaker_id] || 'Unknown',
+      }));
     }),
 });
 

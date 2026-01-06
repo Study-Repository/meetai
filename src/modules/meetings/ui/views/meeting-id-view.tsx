@@ -17,6 +17,7 @@ import { useTRPC } from '@/trpc/client';
 import { MeetingStatus } from '../../types';
 import { ActiveState } from '../components/active-state';
 import { CancelledState } from '../components/cancelled-state';
+import { CompletedState } from '../components/completed-state';
 import { MeetingIdViewHeader } from '../components/meeting-id-view-header';
 import { ProcessingState } from '../components/processing-state';
 import { UpcomingState } from '../components/upcoming-state';
@@ -30,9 +31,18 @@ export const MeetingIdView = ({ meetingId }: Props) => {
   const router = useRouter();
   const trpc = useTRPC();
   const queryClient = useQueryClient();
-  const { data } = useSuspenseQuery(
-    trpc.meetings.getOne.queryOptions({ id: meetingId }),
-  );
+  const { data } = useSuspenseQuery({
+    ...trpc.meetings.getOne.queryOptions({ id: meetingId }),
+    refetchOnWindowFocus: true,
+    // refetchInterval: (query) => {
+    //   // 如果会议处于进行中 (Active) 或处理中 (Processing) 状态，
+    //   // 每 3 秒轮询一次，以便自动更新 UI (例如显示 Summary)
+    //   return query.state.data?.status === MeetingStatus.Active ||
+    //     query.state.data?.status === MeetingStatus.Processing
+    //     ? 3000
+    //     : false;
+    // },
+  });
 
   const [openUpdateMeetingDialog, setOpenUpdateMeetingDialog] = useState(false);
   const [RemoveConfirmationDialog, onRemoveConfirm] = useConfirm({
@@ -76,12 +86,12 @@ export const MeetingIdView = ({ meetingId }: Props) => {
       case MeetingStatus.Processing:
         return <ProcessingState />;
       case MeetingStatus.Completed:
-        return <div>Completed</div>;
+        return <CompletedState data={data} />;
       case MeetingStatus.Cancelled:
         return <CancelledState />;
     }
     return null;
-  }, [data.status, meetingId]);
+  }, [data, meetingId]);
 
   return (
     <>
