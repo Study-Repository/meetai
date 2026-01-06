@@ -2,6 +2,7 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
@@ -19,6 +20,7 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { ERROR_CODES } from '@/constants';
 import { NewAgentDialog } from '@/modules/agents/ui/components/new-agent-dialog';
 import { useTRPC } from '@/trpc/client';
 
@@ -34,6 +36,7 @@ interface Props {
 }
 
 export const MeetingForm = ({ initialValues, onSuccess, onCancel }: Props) => {
+  const router = useRouter();
   const trpc = useTRPC();
   const queryClient = useQueryClient();
 
@@ -47,14 +50,19 @@ export const MeetingForm = ({ initialValues, onSuccess, onCancel }: Props) => {
   const createMeeting = useMutation(
     trpc.meetings.create.mutationOptions({
       onSuccess: async () => {
-        await queryClient.invalidateQueries(
-          trpc.meetings.getMany.queryOptions(),
-        );
+        await Promise.all([
+          queryClient.invalidateQueries(trpc.meetings.getMany.queryOptions()),
+          queryClient.invalidateQueries(
+            trpc.premium.getFreeUsage.queryOptions(),
+          ),
+        ]);
         onSuccess?.();
       },
       onError: (error) => {
-        // TODO: check error type
         toast.error(error.message);
+        if (error.data?.code === ERROR_CODES.FORBIDDEN) {
+          router.push('/upgrade');
+        }
       },
     }),
   );

@@ -53,9 +53,12 @@ export const MeetingIdView = ({ meetingId }: Props) => {
   const removeMutation = useMutation(
     trpc.meetings.remove.mutationOptions({
       onSuccess: async () => {
-        await queryClient.invalidateQueries(
-          trpc.meetings.getMany.queryOptions(),
-        );
+        await Promise.all([
+          queryClient.invalidateQueries(trpc.meetings.getMany.queryOptions()),
+          queryClient.invalidateQueries(
+            trpc.premium.getFreeUsage.queryOptions(),
+          ),
+        ]);
         router.replace('/meetings');
       },
       onError: (error) => {
@@ -74,13 +77,7 @@ export const MeetingIdView = ({ meetingId }: Props) => {
   const stateComponent = useMemo(() => {
     switch (data.status) {
       case MeetingStatus.Upcoming:
-        return (
-          <UpcomingState
-            meetingId={meetingId}
-            isCancelling={false}
-            onCancelMeeting={() => {}}
-          />
-        );
+        return <UpcomingState meetingId={meetingId} />;
       case MeetingStatus.Active:
         return <ActiveState meetingId={meetingId} />;
       case MeetingStatus.Processing:

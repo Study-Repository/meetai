@@ -1,22 +1,30 @@
+// import { GoogleGenAI } from '@google/genai';
 import {
   CallRecordingReadyEvent,
   CallSessionEndedEvent,
   CallSessionParticipantLeftEvent,
   CallSessionStartedEvent,
   CallTranscriptionReadyEvent,
+  MessageNewEvent,
 } from '@stream-io/node-sdk';
-import { and, eq, not } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import { NextRequest, NextResponse } from 'next/server';
 
 import { db } from '@/db';
 import { agents, meetings } from '@/db/schema';
 import { inngest } from '@/inngest/client';
+// import { generateAvatarUri } from '@/lib/avatar';
+import { streamChat } from '@/lib/stream-chat';
 import { streamVideo } from '@/lib/stream-video';
 import { MeetingStatus } from '@/modules/meetings/types';
 
 function verifySignatureWithSDK(body: string, signature: string): boolean {
   return streamVideo.verifyWebhook(body, signature);
 }
+
+// const genAI = new GoogleGenAI({
+//   apiKey: process.env.GEMINI_API_KEY,
+// });
 
 export async function POST(req: NextRequest) {
   console.log('>>> Webhook received');
@@ -267,6 +275,108 @@ export async function POST(req: NextRequest) {
       }
 
       console.log('>>> Meeting updated with recording', updatedMeeting.id);
+
+      break;
+    }
+    case 'message.new': {
+      console.log('>>> Message new');
+      const event = payload as MessageNewEvent;
+
+      const userId = event.user?.id;
+      const channelId = event.channel_id;
+      const text = event.message?.text;
+
+      if (!userId || !channelId || !text) {
+        return NextResponse.json(
+          { error: 'Missing required fields' },
+          { status: 400 },
+        );
+      }
+
+      // get the meeting by id
+      const [meeting] = await db
+        .select({
+          userId: meetings.userId,
+          agentId: agents.id,
+          agentName: agents.name,
+          agentInstructions: agents.instructions,
+        })
+        .from(meetings)
+        .innerJoin(agents, eq(meetings.agentId, agents.id))
+        .where(
+          and(
+            eq(meetings.id, channelId),
+            eq(meetings.status, MeetingStatus.Completed),
+          ),
+        );
+
+      if (!meeting) {
+        return NextResponse.json(
+          { error: 'Meeting not found' },
+          { status: 404 },
+        );
+      }
+
+      if (event.user?.id === meeting.userId) {
+        // await inngest.send({
+        //   name: 'chat/message.new',
+        //   data: {
+        //     userId,
+        //     channelId,
+        //     text,
+        //   },
+        // });
+
+        const channel = await streamChat.channel('messaging', channelId, {
+          members: [meeting.userId],
+        });
+
+        await channel.query({
+          messages: {
+            limit: 10,
+          },
+        });
+
+        const history = channel.state.messages
+          .filter(
+            (msg) =>
+              msg.type === 'regular' &&
+              msg.text &&
+              msg.id !== event.message!.id,
+          )
+          .map((msg) => ({
+            role: msg.user?.id === meeting.userId ? 'user' : 'model',
+            parts: [{ text: msg.text || '' }],
+          }));
+
+        console.log('>>> received message from user: ', userId, 'text: ', text);
+
+        try {
+          // const chatSession = genAI.chats.create({
+          //   model: 'gemini-2.5-flash',
+          //   history: history,
+          //   config: {
+          //     systemInstruction: meeting.agentInstructions,
+          //   },
+          // });
+
+          // const aiResponse = await chatSession.sendMessage({
+          //   message: text,
+          // });
+
+          await channel.sendMessage({
+            text: 'test',
+            user_id: meeting.agentId,
+            silent: true,
+          });
+
+          console.log('>>> AI Response Text:', 'test');
+        } catch (error) {
+          console.error('Gemini Chat Error:', error);
+        }
+
+        console.log('>>> Messages: ', channel.state.messages.length);
+      }
 
       break;
     }
