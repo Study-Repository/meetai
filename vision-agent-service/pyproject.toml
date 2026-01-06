@@ -1,7 +1,7 @@
 [project]
-name = "vision-agents-golf"
+name = "vision-agents-service"
 version = "0.0.0"
-requires-python = ">=3.13"
+requires-python = ">=3.12"
 
 # put only what this example needs
 dependencies = [
@@ -16,6 +16,11 @@ dependencies = [
   "httpx[socks]>=0.25.0",
 ]
 
+# Defined members = ["agents-core", "plugins/*"] so uv knows where to look for local packages.
+# [tool.uv.workspace]
+# members = ["agents-core", "plugins/*"]
+
+# [tool.uv.workspace] Since we are now using a proper workspace, we don't need to manually map the paths for vision-agents and the plugins; uv will find them automatically.
 [tool.uv.sources]
 "vision-agents" = {path = "./agents-core", editable=true}
 "vision-agents-plugins-ultralytics" = {path = "./plugins/ultralytics", editable=true}
