@@ -2,6 +2,7 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useRouter } from 'next/navigation';
 import { useForm, useWatch } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
@@ -18,6 +19,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { ERROR_CODES } from '@/constants';
 import { useTRPC } from '@/trpc/client';
 
 import { agentsInsertSchema } from '../../schema';
@@ -30,6 +32,7 @@ interface Props {
 }
 
 export const AgentForm = ({ initialValues, onSuccess, onCancel }: Props) => {
+  const router = useRouter();
   const trpc = useTRPC();
   const queryClient = useQueryClient();
 
@@ -40,12 +43,17 @@ export const AgentForm = ({ initialValues, onSuccess, onCancel }: Props) => {
         await Promise.all([
           queryClient.invalidateQueries(trpc.agents.getMany.queryOptions()),
           queryClient.invalidateQueries(trpc.agents.getAll.queryOptions()),
+          queryClient.invalidateQueries(
+            trpc.premium.getFreeUsage.queryOptions(),
+          ),
         ]);
         onSuccess?.();
       },
       onError: (error) => {
-        // TODO: check error type
         toast.error(error.message);
+        if (error.data?.code === ERROR_CODES.FORBIDDEN) {
+          router.push('/upgrade');
+        }
       },
     }),
   );

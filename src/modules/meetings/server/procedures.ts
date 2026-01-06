@@ -4,11 +4,15 @@ import JSONL from 'jsonl-parse-stringify';
 import { z } from 'zod';
 
 import { db } from '@/db';
-import { agents, meetings, user } from '@/db/schema';
+import { agents, meetings } from '@/db/schema';
 import { generateAvatarUri } from '@/lib/avatar';
 import { streamChat } from '@/lib/stream-chat';
 import { streamVideo } from '@/lib/stream-video';
-import { createTRPCRouter, protectedProcedure } from '@/trpc/init';
+import {
+  createTRPCRouter,
+  premiumProcedure,
+  protectedProcedure,
+} from '@/trpc/init';
 
 import {
   meetingsIdSchema,
@@ -121,7 +125,7 @@ export const meetingsRouter = createTRPCRouter({
         totalPages: Math.ceil(Number(totalCountResult?.count ?? 0) / pageSize),
       };
     }),
-  create: protectedProcedure
+  create: premiumProcedure('meetings')
     .input(meetingsInsertSchema)
     .mutation(async ({ input, ctx }) => {
       const [createdMeeting] = await db

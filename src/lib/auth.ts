@@ -1,8 +1,11 @@
+import { checkout, polar, portal, usage } from '@polar-sh/better-auth';
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 
 import { db } from '@/db'; // your drizzle instance
 import * as schema from '@/db/schema';
+
+import { polarClient } from './polar';
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
@@ -24,4 +27,18 @@ export const auth = betterAuth({
       clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
     },
   },
+  plugins: [
+    polar({
+      client: polarClient,
+      createCustomerOnSignUp: true,
+      use: [
+        checkout({
+          authenticatedUsersOnly: true,
+          successUrl: '/upgrade',
+        }),
+        portal(),
+        usage(),
+      ],
+    }),
+  ],
 });

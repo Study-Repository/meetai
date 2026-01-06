@@ -29,7 +29,7 @@ export const DashboardUserButton = () => {
   const { data: session, isPending } = authClient.useSession();
 
   const onBilling = () => {
-    console.log('Billing');
+    authClient.customer.portal();
   };
 
   const onSignOut = () => {
@@ -117,7 +117,10 @@ export const DashboardUserButton = () => {
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem className="flex cursor-pointer items-center justify-between">
+        <DropdownMenuItem
+          className="flex cursor-pointer items-center justify-between"
+          onClick={onBilling}
+        >
           <span>Billing</span>
           <CreditCardIcon className="size-4" />
         </DropdownMenuItem>
