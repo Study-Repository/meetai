@@ -47,7 +47,9 @@ export const meetingsProcessing = inngest.createFunction(
     const agentId = event.data.agentId;
     const transcriptUrl = event.data.transcriptUrl;
 
-    const response = await step.fetch(transcriptUrl).then((res) => res.text());
+    const response = await step.run('fetch-transcript', () =>
+      fetch(transcriptUrl).then((res) => res.text()),
+    );
 
     const participants = await step.run('fetch-participants', async () => {
       const meetingData = await getMeetingParticipants(meetingId);
