@@ -1,0 +1,3 @@
+[submodule "vision-agent-service"]
+	path = vision-agent-service
+	url = https://huggingface.co/spaces/crystal-x/vision-agent
