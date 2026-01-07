@@ -3,7 +3,7 @@ services:
     build:
       context: ./vision-agent-service
       dockerfile: Dockerfile
-    container_name: meetai-vision-agent
+    container_name: vision-agent
     ports:
       - '8000:8000'
     volumes:
@@ -12,22 +12,17 @@ services:
       # - ~/.cache/ultralytics:/root/.cache/ultralytics
     env_file:
       - .env
+      - .env.local
     environment:
       - PYTHONUNBUFFERED=1
-      # 确保这些变量在 .env 文件中存在
-      - NEXT_PUBLIC_STREAM_API_KEY=${NEXT_PUBLIC_STREAM_API_KEY}
-      - STREAM_SECRET_KEY=${STREAM_SECRET_KEY}
-      - STREAM_API_KEY=${NEXT_PUBLIC_STREAM_API_KEY}
-      - STREAM_API_SECRET=${STREAM_SECRET_KEY}
-      - GOOGLE_API_KEY=${GEMINI_API_KEY}
-        # 强制设置代理，不要用 ${} 变量引用，直接写死尝试
+        # Proxy
       - HTTP_PROXY=http://host.docker.internal:7890
       - HTTPS_PROXY=http://host.docker.internal:7890
       - http_proxy=http://host.docker.internal:7890
       - https_proxy=http://host.docker.internal:7890
       # 必须配置 NO_PROXY 避免代理本地流量
-      - NO_PROXY=localhost,127.0.0.1,0.0.0.0,meetai-vision-agent
-      - no_proxy=localhost,127.0.0.1,0.0.0.0,meetai-vision-agent
+      - NO_PROXY=localhost,127.0.0.1,0.0.0.0,vision-agent
+      - no_proxy=localhost,127.0.0.1,0.0.0.0,vision-agent
     # Add extra_hosts to resolve host.docker.internal on Linux/older Docker versions (optional but recommended)
     extra_hosts:
       - 'host.docker.internal:host-gateway'

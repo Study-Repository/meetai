@@ -5,7 +5,7 @@
 HOST_IP ?= $(shell ipconfig getifaddr en0 2>/dev/null || ip -4 addr show eth0 | grep -oP '(?<=inet\s)\d+(\.\d+){3}' | head -n 1 2>/dev/null || echo "host.docker.internal")
 
 # Docker Compose 文件路径
-COMPOSE_FILE_VISION := docker-compose.yml
+COMPOSE_FILE_VISION := docker-compose_agent.yml
 COMPOSE_FILE_INNGEST := docker-compose_inngest.yaml
 
 # 默认目标

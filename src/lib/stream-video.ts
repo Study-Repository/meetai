@@ -4,6 +4,6 @@ import { StreamClient } from '@stream-io/node-sdk';
 
 export const streamVideo = new StreamClient(
   process.env.NEXT_PUBLIC_STREAM_API_KEY!,
-  process.env.STREAM_SECRET_KEY!,
+  process.env.STREAM_API_SECRET!,
   { timeout: 15_000 },
 );

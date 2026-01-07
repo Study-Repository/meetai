@@ -109,21 +109,20 @@ export async function POST(req: NextRequest) {
 
       try {
         // 调用 Python 服务
-        const response = await fetch(
-          `${process.env.VISION_AGENT_SERVICE_URL!}/join-call`,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              call_id: existingMeeting.id,
-              call_type: 'default',
-              agent_id: existingAgent.id,
-              agent_name: existingAgent.name,
-              // 如果你想用数据库里的指令覆盖 Python 里的默认指令：
-              instructions: existingAgent.instructions || 'Read @golf_coach.md',
-            }),
-          },
-        );
+        const serviceUrl = process.env.VISION_AGENT_SERVICE_URL!;
+        console.log('>>> Vision Agent Service URL: ', serviceUrl);
+        const response = await fetch(`${serviceUrl}/join-call`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            call_id: existingMeeting.id,
+            call_type: 'default',
+            agent_id: existingAgent.id,
+            agent_name: existingAgent.name,
+            // 如果你想用数据库里的指令覆盖 Python 里的默认指令：
+            instructions: existingAgent.instructions || 'Read @golf_coach.md',
+          }),
+        });
 
         if (!response.ok) {
           console.error(
